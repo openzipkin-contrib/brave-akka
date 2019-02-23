@@ -1,2 +1,19 @@
 *.class
 *.log
+
+dist/
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/target/
+project/plugins/project/
+.history
+.cache
+.lib/
+
+# IntelliJ
+*.ipr
+*.iml
+*.iws
+.idea/
