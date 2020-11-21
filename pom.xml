@@ -203,6 +203,8 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
     <pluginManagement>
       <plugins>
         <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
