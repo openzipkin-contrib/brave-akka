@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2016-2020 The OpenZipkin Authors
+    Copyright 2018-2020 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -37,7 +37,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
-    <scala.version>2.12.11</scala.version>
+    <scala-library.version>2.12.11</scala-library.version>
     <brave.version>5.13.1</brave.version>
     <akka.version>2.5.32</akka.version>
 
@@ -45,7 +45,7 @@
     <junit.version>4.13.1</junit.version>
     <scalatest.version>3.0.9</scalatest.version>
 
-    <animal-sniffer-maven-plugin.version>1.19</animal-sniffer-maven-plugin.version>
+    <genjavadoc-plugin.version>0.16</genjavadoc-plugin.version>
     <go-offline-maven-plugin.version>1.2.7</go-offline-maven-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.0.rc2</license-maven-plugin.version>
@@ -62,7 +62,7 @@
   <name>Brave Akka</name>
   <description>Brave Akka</description>
   <url>https://github.com/openzipkin-contrib/brave-akka</url>
-  <inceptionYear>2016</inceptionYear>
+  <inceptionYear>2018</inceptionYear>
 
   <organization>
     <name>OpenZipkin</name>
@@ -114,7 +114,7 @@
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>${scala.version}</version>
+      <version>${scala-library.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -231,6 +231,12 @@
                 <repositoryType>MAIN</repositoryType>
               </DynamicDependency>
               <DynamicDependency>
+                <groupId>com.typesafe.genjavadoc</groupId>
+                <artifactId>genjavadoc-plugin_${scala-library.version}</artifactId>
+                <version>${genjavadoc-plugin.version}</version>
+                <repositoryType>MAIN</repositoryType>
+              </DynamicDependency>
+              <DynamicDependency>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin-git</artifactId>
                 <version>${license-maven-plugin.version}</version>
@@ -300,7 +306,7 @@
         <version>${scala-maven-plugin.version}</version>
         <configuration>
           <charset>${project.build.sourceEncoding}</charset>
-          <scalaVersion>${scala.version}</scalaVersion>
+          <scalaVersion>${scala-library.version}</scalaVersion>
         </configuration>
         <executions>
           <execution>
@@ -337,29 +343,6 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
-      </plugin>
-
-      <!-- Language-level aside, make sure Java 9 types and methods aren't used -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>${animal-sniffer-maven-plugin.version}</version>
-        <configuration>
-          <checkTestClasses>false</checkTestClasses>
-          <skip>${skipTests}</skip>
-          <signature>
-            <groupId>org.codehaus.mojo.signature</groupId>
-            <artifactId>${main.signature.artifact}</artifactId>
-            <version>1.0</version>
-          </signature>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>
@@ -516,27 +499,6 @@
             </executions>
           </plugin>
 
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>enforce-java</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <!-- JDK 12+ can no longer generate Java 1.6 bytecode, so we require JDK 11.
-                         https://www.oracle.com/java/technologies/javase/12-relnote-issues.html -->
-                    <requireJavaVersion>
-                      <version>[11,12)</version>
-                    </requireJavaVersion>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
           <!-- Creates source jar -->
           <plugin>
             <artifactId>maven-source-plugin</artifactId>
@@ -547,6 +509,52 @@
                 <goals>
                   <goal>jar</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.scala-tools</groupId>
+            <artifactId>maven-scala-plugin</artifactId>
+            <version>2.15.2</version>
+            <executions>
+              <execution>
+                <id>scala-compile-first</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <args>
+                    <arg>-P:genjavadoc:out=${project.build.directory}/genjavadoc</arg>
+                  </args>
+                  <compilerPlugins>
+                    <compilerPlugin>
+                      <groupId>com.typesafe.genjavadoc</groupId>
+                      <artifactId>genjavadoc-plugin_${scala-library.version}</artifactId>
+                      <version>${genjavadoc-plugin.version}</version>
+                    </compilerPlugin>
+                  </compilerPlugins>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>${project.build.directory}/genjavadoc</source>
+                  </sources>
+                </configuration>
               </execution>
             </executions>
           </plugin>
