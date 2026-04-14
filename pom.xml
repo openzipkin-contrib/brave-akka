@@ -41,7 +41,7 @@
     <brave.version>5.13.3</brave.version>
     <akka.version>2.5.32</akka.version>
 
-    <log4j.version>2.14.0</log4j.version>
+    <log4j.version>2.25.4</log4j.version>
     <junit.version>4.13.1</junit.version>
     <scalatest.version>3.0.9</scalatest.version>
 
